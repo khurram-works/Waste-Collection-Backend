@@ -1,0 +1,419 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  userId             Int                 @id @default(autoincrement())
+  email              String              @unique @db.VarChar(255)
+  password           String              @db.VarChar(255)
+  role               Role
+  name               String              @db.VarChar(100)
+  phone              String?             @db.VarChar(20)
+  address            String?
+  zoneId             Int?
+  vehicle            String?             @db.VarChar(50)
+  responsibleFor     RouteType?
+  status             UserStatus          @default(ACTIVE)
+  totalEarnings      Decimal             @default(0.0) @db.Decimal(12, 2)
+  availableBalance   Decimal             @default(0.0) @db.Decimal(12, 2)
+  pendingBalance     Decimal             @default(0.0) @db.Decimal(12, 2)
+  deletedAt          DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  addresses          Address[]
+  auditLogs          AuditLog[]
+  pickupRequests     PickupRequest[]     @relation("citizenRequests")
+  assignedPickups    PickupRequest[]     @relation("workerAssignments")
+  createdRateConfigs RateConfig[]        @relation("adminCreatedRates")
+  notifications      Notification[]
+  withdrawals        WithdrawalRequest[]
+  transactions       Transaction[]
+  refreshTokens      RefreshToken[]
+  zone               Zone?               @relation(fields: [zoneId], references: [zoneId])
+
+  @@map("users")
+}
+
+model Address {
+  addressId Int      @id @default(autoincrement())
+  userId    Int
+  address   String
+  latitude  Decimal  @db.Decimal(9, 6)
+  longitude Decimal  @db.Decimal(9, 6)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  user      User     @relation(fields: [userId], references: [userId])
+
+  @@unique([userId, address])
+  @@index([userId])
+  @@map("addresses")
+}
+
+model Zone {
+  zoneId      Int       @id @default(autoincrement())
+  name        String    @unique @db.VarChar(100)
+  description String?
+  city        String?   @db.VarChar(20)
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  routes      Route[]
+  users       User[]
+
+  @@map("zones")
+}
+
+model Route {
+  routeId        Int             @id @default(autoincrement())
+  name           String          @db.VarChar(100)
+  type           RouteType
+  zoneId         Int
+  schedule       String?
+  capacityPerDay Int?
+  isActive       Boolean         @default(true)
+  deletedAt      DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  pickupRequests PickupRequest[]
+  zone           Zone            @relation(fields: [zoneId], references: [zoneId])
+
+  @@map("routes")
+}
+
+model PickupRequest {
+  requestId       Int             @id @default(autoincrement())
+  citizenId       Int
+  workerId        Int?
+  routeId         Int?
+  wasteType       WasteType
+  estimatedWeight Decimal         @db.Decimal(8, 3)
+  actualWeight    Decimal?        @db.Decimal(8, 3)
+  condition       WasteCondition?
+  status          RequestStatus   @default(PENDING)
+  requestDate     DateTime        @default(now())
+  assignedDate    DateTime?
+  scheduledDate   DateTime?
+  collectionDate  DateTime?
+  priority        PriorityLevel   @default(MEDIUM)
+  address         String
+  notes           String?
+  photoUrl        String?
+  rateApplied     Decimal?        @db.Decimal(10, 2)
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  latitude        Decimal         @db.Decimal(9, 6)
+  longitude       Decimal         @db.Decimal(9, 6)
+  citizen         User            @relation("citizenRequests", fields: [citizenId], references: [userId])
+  route           Route?          @relation(fields: [routeId], references: [routeId])
+  worker          User?           @relation("workerAssignments", fields: [workerId], references: [userId])
+  transaction     Transaction[]
+
+  @@index([citizenId])
+  @@index([workerId])
+  @@index([routeId])
+  @@index([status])
+  @@index([requestDate])
+  @@index([assignedDate])
+  @@index([scheduledDate])
+  @@index([priority])
+  @@map("pickup_requests")
+}
+
+model Transaction {
+  transactionId Int @id @default(autoincrement())
+  citizenId     Int
+
+  // Relations
+  requestId    Int?
+  withdrawalId Int?
+
+  // Money
+  amount            Decimal           @db.Decimal(10, 2)
+  type              LedgerType
+  transactionStatus TransactionStatus @default(PENDING)
+
+  // Source tracking
+  sourceType  TransactionSourceType
+  description String?
+  referenceId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  citizen    User               @relation(fields: [citizenId], references: [userId])
+  request    PickupRequest?     @relation(fields: [requestId], references: [requestId])
+  withdrawal WithdrawalRequest? @relation(fields: [withdrawalId], references: [id])
+
+  @@index([citizenId])
+  @@index([transactionStatus])
+}
+
+model RateConfig {
+  rateId        Int            @id @default(autoincrement())
+  wasteType     WasteType
+  condition     WasteCondition
+  ratePerKg     Decimal        @db.Decimal(8, 3)
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isActive      Boolean        @default(true)
+  createdBy     Int
+  deletedAt     DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  creator       User           @relation("adminCreatedRates", fields: [createdBy], references: [userId])
+
+  @@unique([wasteType, condition, effectiveFrom])
+  @@index([isActive])
+  @@index([createdBy])
+  @@map("rate_configs")
+}
+
+model AuditLog {
+  auditId   BigInt   @id @default(autoincrement())
+  timestamp DateTime @default(now())
+
+  // WHO
+  userId   Int?
+  userRole Role?
+  user     User? @relation(fields: [userId], references: [userId])
+
+  // WHAT
+  action AuditAction
+  status AuditStatus @default(SUCCESS)
+
+  // TARGET (what was affected)
+  targetType AuditTargetType
+  targetId   String?
+
+  // DATA CHANGE (most important)
+  oldValue Json?
+  newValue Json?
+
+  // CONTEXT
+  ipAddress String?
+  userAgent String?
+  requestId String? // trace request across logs
+
+  // EXTRA
+  metadata Json? // flexible for future
+
+  createdAt DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([userId])
+  @@index([action])
+  @@index([targetType])
+  @@map("audit_logs")
+}
+
+model WithdrawalRequest {
+  id     Int     @id @default(autoincrement())
+  userId Int
+  amount Decimal @db.Decimal(10, 2)
+
+  status WithdrawalStatus @default(PENDING)
+
+  // User input per request
+  paymentMethod PayoutMethodType
+  accountNumber String
+  accountTitle  String
+  bankName      String?
+  iban          String?
+
+  // Payment tracking
+  paymentReference String?
+  processedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [userId])
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Notification {
+  id     Int @id @default(autoincrement())
+  userId Int
+
+  // WHAT happened
+  type NotificationType
+
+  // WHAT user sees
+  title   String
+  message String
+
+  // EXTRA DATA (for navigation / logic)
+  metadata Json
+
+  // STATE
+  isRead Boolean @default(false)
+
+  // TIME
+  createdAt DateTime @default(now())
+
+  // RELATION
+  user User @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  // 🚚 PICKUP FLOW
+  PICKUP_SUBMITTED
+  PICKUP_ASSIGNED
+  PICKUP_SCHEDULED
+  PICKUP_COLLECTED
+  PICKUP_VERIFIED
+  PICKUP_CANCELLED
+
+  // 💰 PAYMENT
+  PAYMENT_CREDITED
+
+  // 💸 WITHDRAWAL
+  WITHDRAWAL_REQUESTED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_PAID
+  WITHDRAWAL_REJECTED
+}
+
+enum Role {
+  CITIZEN
+  WORKER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum WasteType {
+  PET
+  CARDBOARD
+  PAPER
+  METAL
+  NON_RECYCLABLE
+}
+
+enum WasteCondition {
+  PROPER       @map("PROPER")
+  MIXED        @map("MIXED")
+  CONTAMINATED @map("CONTAMINATED")
+}
+
+enum RequestStatus {
+  PENDING
+  ASSIGNED
+  COLLECTED
+  VERIFIED
+  PAID
+  CANCELLED
+}
+
+enum RouteType {
+  recycling
+  landfill
+}
+
+enum PriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TransactionStatus {
+  PENDING
+  AUTHORIZED
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum TransactionType {
+  CASH
+  BANK
+  WALLET
+}
+
+enum LedgerType {
+  CREDIT
+  DEBIT
+}
+
+enum TransactionSourceType {
+  PICKUP
+  WITHDRAWAL
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  PAID
+  FAILED
+  REJECTED
+}
+
+enum PayoutMethodType {
+  BANK
+  EASYPAISA
+  JAZZCASH
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+
+  LOGIN
+  LOGOUT
+
+  ASSIGN
+  APPROVE
+  REJECT
+
+  STATUS_CHANGE
+  PAYMENT
+  WITHDRAWAL
+}
+
+enum AuditStatus {
+  SUCCESS
+  FAILED
+}
+
+enum AuditTargetType {
+  USER
+  ADDRESS
+  ZONE
+  ROUTE
+  PICKUP_REQUEST
+  TRANSACTION
+  WITHDRAWAL
+  RATE_CONFIG
+}
+
+model RefreshToken {
+  id    Int    @id @default(autoincrement())
+  token String @unique
+
+  userId Int
+  user   User @relation(fields: [userId], references: [userId])
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  revoked Boolean @default(false)
+}
