@@ -117,7 +117,6 @@ export async function taskhistory(req: e.Request, res: e.Response) {
       },
     });
 
-    // console.log(history);
     return res.status(200).json({
       history: history
     })

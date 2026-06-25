@@ -2,24 +2,20 @@ import e from "express";
 import { prisma } from "../../lib/prisma";
 import { LedgerType, RequestStatus, TransactionSourceType, TransactionStatus } from "../../generated/prisma/enums";
 import { AuditAction, AuditTargetType } from "../../generated/prisma/enums";
-import { auditLogger } from "../utils/auditLogger"; // adjust path as needed
-// import { pollingManager } from "../utils/pollingManager";
+import { auditLogger } from "../utils/auditLogger";
 import { createNotification } from "../service/notificationService";
 
 export async function updateTask(req: e.Request, res: e.Response) {
   const requestId = Number(req.params.requestId);
   const { values } = req.body;
 
-  // Extract worker role from auth middleware (adjust based on your auth setup)
   const actorId = req.user?.id;
-  // const actorRole = req.user?.role;
 
   if (isNaN(requestId)) {
     return res.status(400).json({ success: false, message: "Invalid requestId" });
   }
 
   try {
-    // ─── Fetch old values BEFORE mutations ───────────────────────────────
     const oldPickupRequest = await prisma.pickupRequest.findUnique({
       where: { requestId },
     });
@@ -34,7 +30,6 @@ export async function updateTask(req: e.Request, res: e.Response) {
       select: { totalEarnings: true },
     });
 
-    // ─── 1. Update Pickup Request ─────────────────────────────────────────
     const updatedTask = await prisma.pickupRequest.update({
       where: { requestId },
       data: {
@@ -60,7 +55,7 @@ export async function updateTask(req: e.Request, res: e.Response) {
     await auditLogger({
       userId: actorId,
       userRole: "WORKER",
-      action: AuditAction.STATUS_CHANGE,           // VERIFIED is a status change
+      action: AuditAction.STATUS_CHANGE,           
       targetType: AuditTargetType.PICKUP_REQUEST,
       targetId: String(requestId),
       oldValue: {
@@ -78,7 +73,6 @@ export async function updateTask(req: e.Request, res: e.Response) {
       req,
     });
 
-    // ─── 2. Create Transaction ────────────────────────────────────────────
     const transaction = await prisma.transaction.create({
       data: {
         citizenId: values.citizenId,
@@ -99,7 +93,7 @@ export async function updateTask(req: e.Request, res: e.Response) {
         metadata: {
           amount: Number(transaction.amount),
           transactionId: transaction.transactionId,
-          processedAt: new Date().toISOString(), // Good for debugging
+          processedAt: new Date().toISOString(),
         },
     });
 
@@ -108,7 +102,7 @@ export async function updateTask(req: e.Request, res: e.Response) {
       userRole: "WORKER",
       action: "PAYMENT",
       targetType: AuditTargetType.TRANSACTION,
-      targetId: String(transaction.transactionId),  // adjust field name as needed
+      targetId: String(transaction.transactionId), 
       newValue: {
         citizenId: values.citizenId,
         requestId: values.requestId,
@@ -120,7 +114,6 @@ export async function updateTask(req: e.Request, res: e.Response) {
       req,
     });
 
-    // ─── 3. Update Citizen Balance ────────────────────────────────────────
     const citizen = await prisma.user.update({
       where: { userId: values.citizenId },
       data: {
@@ -146,7 +139,6 @@ export async function updateTask(req: e.Request, res: e.Response) {
       req,
     });
 
-    // ─── 4. Update Worker Earnings ────────────────────────────────────────
     const worker = await prisma.user.update({
       where: { userId: values.workerId },
       data: {
@@ -172,7 +164,6 @@ export async function updateTask(req: e.Request, res: e.Response) {
     return res.status(200).json({ success: true, message: "Task updated successfully", data: updatedTask });
 
   } catch (error: any) {
-    // ─── Log failure audit ────────────────────────────────────────────────
     await auditLogger({
       userId: actorId,
       userRole: "WORKER",
@@ -182,7 +173,7 @@ export async function updateTask(req: e.Request, res: e.Response) {
       newValue: { attemptedValues: values },
       status: "FAILED",
       req,
-    }).catch(() => {}); // silently fail — don't let audit break error response
+    }).catch(() => {});
 
     console.error(error);
     return res.status(500).json({ success: false, message: error.message });

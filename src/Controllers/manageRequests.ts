@@ -31,7 +31,6 @@ export async function manageRequests(req: e.Request, res: e.Response){
    const allWorkers = await prisma.user.findMany({
     where:{
       role: Role.WORKER,
-      // status: UserStatus.ACTIVE
     },
     select:{
       userId:true,

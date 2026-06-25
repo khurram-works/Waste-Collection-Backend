@@ -23,7 +23,6 @@ export async function getTransactions(req:e.Request, res:e.Response){
       }
     })
 
-    // console.log(transactions);
 
     return res.status(200).json({
       message: "Success",

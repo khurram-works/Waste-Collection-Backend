@@ -2,10 +2,10 @@ import nodemailer from "nodemailer";
 
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",           // tells Nodemailer to use Gmail's SMTP settings automatically
+  service: "gmail",           
   auth: {
-    user: process.env.EMAIL_USER,   // your Gmail address from .env
-    pass: process.env.EMAIL_PASS,   // your App Password from .env (NOT your real password)
+    user: process.env.EMAIL_USER,   
+    pass: process.env.EMAIL_PASS,   
   },
 });
 
@@ -47,7 +47,6 @@ function buildEmailHTML(title: string, message: string, type: string): string {
                      style="background:#ffffff; border-radius:12px; overflow:hidden; 
                             box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                 
-                <!-- Top colored banner with logo text -->
                 <tr>
                   <td style="background:${bannerColor}; padding: 24px 32px;">
                     <p style="margin:0; color:#ffffff; font-size:20px; font-weight:bold;">
@@ -59,20 +58,16 @@ function buildEmailHTML(title: string, message: string, type: string): string {
                   </td>
                 </tr>
 
-                <!-- Main content area -->
                 <tr>
                   <td style="padding: 32px;">
-                    <!-- Notification title -->
                     <h2 style="margin: 0 0 12px; color: #111827; font-size: 20px;">
                       ${title}
                     </h2>
                     
-                    <!-- Notification message -->
                     <p style="margin: 0 0 24px; color: #4b5563; font-size: 15px; line-height: 1.6;">
                       ${message}
                     </p>
 
-                    <!-- A call-to-action button linking to your app -->
                     <a href="http://localhost:5173/" 
                        style="display:inline-block; background:${bannerColor}; color:#ffffff; 
                               text-decoration:none; padding: 12px 24px; border-radius:8px; 
@@ -82,7 +77,7 @@ function buildEmailHTML(title: string, message: string, type: string): string {
                   </td>
                 </tr>
 
-                <!-- Footer -->
+
                 <tr>
                   <td style="padding: 16px 32px; background:#f9fafb; border-top: 1px solid #e5e7eb;">
                     <p style="margin:0; color:#9ca3af; font-size:12px;">

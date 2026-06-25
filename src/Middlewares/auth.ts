@@ -23,7 +23,6 @@ function authenticateToken(
     ? authHeader.split(" ")[1]
     : undefined;
 
-  // httpOnly cookie first, then Bearer (Postman / mobile)
   const token = req.cookies?.accessToken ?? bearerToken;
 
   if (!token) {

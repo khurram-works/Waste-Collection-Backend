@@ -30,23 +30,19 @@ export async function createNotification({
 
   if (userConnections && userConnections.length > 0) {
     userConnections.forEach(({ resolve, timer }) => {
-      clearTimeout(timer); // cancel their 28-second timeout — not needed anymore
-      resolve({ notifications: [notification] }); // this unfreezes the request
+      clearTimeout(timer); 
+      resolve({ notifications: [notification] });
     });
-    // Clear their entry — they will immediately reconnect after receiving data
+
     waitingClients.delete(userId);
   }
 
   const user = await prisma.user.findUnique({
     where: { userId },
-    select: { email: true }, // we only need the email, nothing else
+    select: { email: true },
   });
 
   if (user?.email) {
-    // Notice we do NOT await this. This means we don't wait for the email
-    // to finish sending before this function returns. Email can take a second
-    // or two — we don't want to make your API response slower because of it.
-    // The email sends in the background while your server continues normally.
     sendNotificationEmail({
       toEmail: user.email,
       type,
@@ -58,8 +54,7 @@ export async function createNotification({
   return notification;
 }
 
-// These two helpers are used by the poll controller below.
-// They cleanly add and remove clients from the waiting room.
+
 
 export function addWaitingClient(
   userId: number,

@@ -2,7 +2,7 @@ import { CookieOptions, Response } from "express";
 
 const isProd = process.env.NODE_ENV === "production";
 
-export const ACCESS_COOKIE_MAX_AGE_MS = 30 * 1000; // must match ACCESS_TOKEN_EXPIRES_IN when using 30s
+export const ACCESS_COOKIE_MAX_AGE_MS = 30 * 1000; 
 export const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const baseOptions: CookieOptions = {

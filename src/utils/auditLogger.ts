@@ -1,5 +1,4 @@
 import { prisma } from "../../lib/prisma";
-// import { Role } from "@prisma/client";
 import { Role,AuditAction,AuditTargetType } from "../../generated/prisma/enums";
 
 type AuditLogParams = {

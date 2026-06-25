@@ -2,7 +2,6 @@ import e from "express";
 import { prisma} from "../../lib/prisma"
 import { RequestStatus } from "../../generated/prisma/enums";
 import { auditLogger } from "../utils/auditLogger";
-// import { pollingManager } from "../utils/pollingManager";
 import { createNotification } from "../service/notificationService";
 
 export async function updateStatus(req:e.Request, res:e.Response){

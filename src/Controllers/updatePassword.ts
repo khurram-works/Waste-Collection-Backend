@@ -49,7 +49,6 @@ export async function updatePassword(req: e.Request, res: e.Response) {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // ✅ ONLY ONE UPDATE USING withAudit
     const updatedUser = await withAudit({
       action: "UPDATE",
       targetType: "USER",

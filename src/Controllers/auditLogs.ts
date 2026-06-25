@@ -6,7 +6,7 @@ export async function auditLogs(req:e.Request,res:e.Response){
     const auditLogs = await prisma.auditLog.findMany({orderBy:{createdAt:'desc'}});
     const serializedLogs = auditLogs.map(log => ({
       ...log,
-      auditId: log.auditId.toString(), // Replace 'id' with whatever field is the BigInt
+      auditId: log.auditId.toString(), 
     }));
     return res.status(200).json({auditLogs:serializedLogs, success:true})
   }catch(err){

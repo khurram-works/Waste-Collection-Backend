@@ -10,7 +10,6 @@ export async function rejectWithdrawalRequest(
   const id = Number(req.params.id);
 
   try {
-    // 1. Get withdrawal request
     const withdrawal = await prisma.withdrawalRequest.findUnique({
       where: { id }
     });
@@ -19,7 +18,6 @@ export async function rejectWithdrawalRequest(
       return res.status(404).json({ message: "Withdrawal not found" });
     }
 
-    // Prevent double handling
     if (withdrawal.status === "PAID") {
       return res.status(400).json({ message: "Already paid, cannot reject" });
     }
@@ -31,7 +29,6 @@ export async function rejectWithdrawalRequest(
     const userId = withdrawal.userId;
     const amount = withdrawal.amount;
 
-    // 2. DB transaction (VERY IMPORTANT)
     const result = await prisma.$transaction(async (tx) => {
       const updatedRequest = await tx.withdrawalRequest.update({
         where: { id },
@@ -46,7 +43,7 @@ export async function rejectWithdrawalRequest(
         }
       });
 
-      return updatedRequest; // Now 'result' holds the data outside the block
+      return updatedRequest; 
     });
 
     await createNotification({
@@ -65,7 +62,7 @@ export async function rejectWithdrawalRequest(
       userId: req.user?.id,
       targetType: "WITHDRAWAL",
       userRole: "ADMIN",
-      targetId: String(id), // The ID of the withdrawal
+      targetId: String(id),
       action: "REJECT",
       req,
     });

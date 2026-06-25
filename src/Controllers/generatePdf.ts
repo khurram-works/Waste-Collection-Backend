@@ -1,7 +1,7 @@
 import express from "express";
 import puppeteer from "puppeteer";
 
-// ── Design tokens (same as frontend) ──
+
 const T = {
   emerald: "#059669",
   emeraldDark: "#047857",
@@ -27,8 +27,7 @@ const T = {
   white: "#ffffff",
 };
 
-// ── TypeScript interfaces — these tell TypeScript exactly what shape the data is ──
-// Think of interfaces as a contract: "I promise this data will always look like this"
+
 
 interface Trend {
   value: string;
@@ -92,9 +91,6 @@ interface ReportPayload {
   zone: string;
 }
 
-// ── Helper functions — now properly typed ──
-
-// trend parameter now has the Trend interface, so TypeScript is happy
 function trendBadge(trend: Trend): string {
   const color =
     trend.dir === "up" ? T.emerald : trend.dir === "down" ? T.rose : T.gray500;
@@ -109,7 +105,7 @@ function trendBadge(trend: Trend): string {
     font-size:11px; font-weight:700;">${arrow} ${trend.value}</span>`;
 }
 
-// pct is explicitly a number, no ambiguity
+
 function efficiencyBar(pct: number = 0): string {
   const color = pct >= 80 ? T.emerald : pct >= 60 ? T.amber : T.rose;
   return `
@@ -121,7 +117,6 @@ function efficiencyBar(pct: number = 0): string {
     </div>`;
 }
 
-// payload is now typed with ReportPayload — TypeScript knows exactly what's inside
 function buildReportHTML(payload: ReportPayload): string {
   const {
     workersData,
@@ -249,7 +244,6 @@ function buildReportHTML(payload: ReportPayload): string {
     })
     .join("");
 
-  // Typed as a const object with explicit string keys — fixes the indexing error
   const actionColors: Record<string, { color: string; bg: string }> = {
     LOGIN: { color: T.sky, bg: T.skyGhost },
     LOGOUT: { color: T.gray500, bg: T.gray100 },
@@ -261,8 +255,6 @@ function buildReportHTML(payload: ReportPayload): string {
   const activityRows = systemReport
     .slice(0, 15)
     .map((log: AuditLog) => {
-      // Now log.action is a string, and actionColors is Record<string, ...>
-      // so TypeScript can index it without error
       const ac = actionColors[log.action] ?? {
         color: T.gray500,
         bg: T.gray100,

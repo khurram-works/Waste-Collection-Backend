@@ -59,7 +59,7 @@ export async function dashboardData(req: e.Request, res: e.Response) {
         status: "ACTIVE",
         assignedPickups: {
           some: {
-            status: "ASSIGNED", // or remove this if you want ANY task
+            status: "ASSIGNED",
           },
         },
       },
@@ -159,7 +159,6 @@ export async function dashboardData(req: e.Request, res: e.Response) {
       revenueByMonth[key] += Number(tx.amount);
     });
 
-    // console.log(revenueByMonth);
 
     const payoutData = await prisma.withdrawalRequest.findMany({
       where: {
@@ -185,7 +184,6 @@ export async function dashboardData(req: e.Request, res: e.Response) {
       payoutByMonth[key] += Number(p.amount);
     });
 
-    // console.log(payoutData);
 
     const responseData = {
       totalUsers: totalUsers,
@@ -204,7 +202,6 @@ export async function dashboardData(req: e.Request, res: e.Response) {
       non_recyclableWastePercentage: non_recyclableWastePercentage,
     };
 
-    // console.log(recentPickupRequests);
 
     return res.status(200).json({
       responseData,

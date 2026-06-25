@@ -17,7 +17,6 @@ export async function reports(req:e.Request, res:e.Response){
         },
       },
     });
-    // console.log(recyclableWaste);
 
 
     const nonRecyclable = await prisma.pickupRequest.aggregate({
@@ -28,7 +27,6 @@ export async function reports(req:e.Request, res:e.Response){
       },
     });
 
-    // console.log(nonRecyclable);
 
     const wasteByType = await prisma.pickupRequest.groupBy({
       by: ["wasteType"],
@@ -40,7 +38,6 @@ export async function reports(req:e.Request, res:e.Response){
       },
     });
 
-    // console.log(wasteByType);
 
     const totalWaste = await prisma.pickupRequest.aggregate({
       where:{
@@ -192,9 +189,6 @@ export async function reports(req:e.Request, res:e.Response){
       };
     });
 
-    // console.log(bestWorkersPerZone)
-
-    // console.log(workersData);
 
     const SystemLogs = await prisma.auditLog.findMany({
       orderBy:{
@@ -203,14 +197,12 @@ export async function reports(req:e.Request, res:e.Response){
       take:3
     })
 
-    // console.log(SystemLogs);
 
     const weeklyreport = await getPickupStats();
-    // console.log(weeklyreport);
 
     const systemLogs = SystemLogs.map(log => ({
       ...log,
-      auditId: log.auditId.toString(), // Replace 'id' with whatever field is the BigInt
+      auditId: log.auditId.toString(),
     }));
 
     const responseData = {
@@ -228,8 +220,6 @@ export async function reports(req:e.Request, res:e.Response){
       non_recyclePer: non_recyclePer,
       totalWaste : Number(totalWaste._sum.actualWeight),
     }
-
-    // console.log(responseData);
 
 
 

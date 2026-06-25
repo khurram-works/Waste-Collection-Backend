@@ -30,7 +30,6 @@ export async function getPickupStats() {
     end.setHours(23, 59, 59, 999);
 
     const [completed, pending, paid] = await Promise.all([
-      // ✅ COMPLETED (based on actual collection)
       prisma.pickupRequest.count({
         where: {
           status: {
@@ -43,7 +42,7 @@ export async function getPickupStats() {
         },
       }),
 
-      // ⏳ PENDING (requests created that day)
+
       prisma.pickupRequest.count({
         where: {
           status: {
@@ -56,7 +55,6 @@ export async function getPickupStats() {
         },
       }),
 
-      // 💰 PAID (from TRANSACTION table - CORRECT WAY)
       prisma.withdrawalRequest.count({
         where: {
           status: {
@@ -78,7 +76,7 @@ export async function getPickupStats() {
     });
   }
 
-  // console.log(results);
+
   const formatted = results.map(item => {
     const date = new Date(item.date);
 
@@ -90,7 +88,6 @@ export async function getPickupStats() {
     };
   });
 
-  // console.log(formatted);
 
   return formatted;
 }

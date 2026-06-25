@@ -22,17 +22,12 @@ export async function withAudit({
   operation,
 }: WithAuditParams) {
   let oldValue = null;
-
-  // STEP 1: get old data (if needed)
   if (getOldValue) {
     oldValue = await getOldValue();
   }
 
   try {
-    // STEP 2: run actual DB operation
     const result = await operation();
-
-    // STEP 3: log success
     await auditLogger({
       userId: user.id,
       userRole: user.role,

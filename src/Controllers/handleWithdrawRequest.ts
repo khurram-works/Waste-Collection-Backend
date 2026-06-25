@@ -17,7 +17,7 @@ const withdrawRequestSchema = Joi.object({
 export async function withdrawalRequest(
   req: Request,
   res: Response,
-  next: NextFunction
+  // next: NextFunction
 ) {
   const { error, value } = withdrawRequestSchema.validate(req.body);
   if (error) {
@@ -34,11 +34,10 @@ export async function withdrawalRequest(
         pendingBalance:true
       }
     })
-    // Use a transaction to ensure atomicity
+  
     const result = await prisma.$transaction(async (tx) => {
-      // Check current balance (optional but recommended)
       const user = await tx.user.findUnique({
-        where: { userId }, // adjust if your PK is 'userId'
+        where: { userId }, 
         select: { availableBalance: true },
       });
       if (!user || user.availableBalance < amount) {
@@ -53,13 +52,12 @@ export async function withdrawalRequest(
           accountNumber,
           accountTitle,
           bankName,
-          // iban: iban === "" ? "No" : iban,
-          iban: iban || null,   // if you want to convert empty string to null
+          iban: iban || null, 
         },
       });
 
       await createNotification({
-          userId: 2, // Avoid hardcoding '2' if possible
+          userId: req.user?.id || 2, 
           type: "WITHDRAWAL_REQUESTED",
           title: "New Withdrawal Request",
           message: `User #${withdrawalRequest.userId} has requested a withdrawal of $${withdrawalRequest.amount}.`,
