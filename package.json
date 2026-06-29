@@ -30,6 +30,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
+    "@supabase/supabase-js": "^2.108.2",
     "@types/nodemailer": "^8.0.0",
     "bcrypt": "^6.0.0",
     "chart.js": "^4.5.1",

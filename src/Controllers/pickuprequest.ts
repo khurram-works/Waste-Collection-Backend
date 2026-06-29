@@ -5,6 +5,7 @@ import fs from "fs";
 import { Request, Response } from "express";
 import { PickupRequests } from "../models/pickupRequest";
 import { prisma } from "../../lib/prisma";
+import { supabase } from "../lib/supabase";
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
