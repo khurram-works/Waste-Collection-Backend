@@ -73,23 +73,27 @@ export const handlePickupRequest = [
         if (fileSizeMB > 5) {
           return res.status(400).json({ error: "File must be under 5MB" });
         }
+
         const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
         const ext = path.extname(req.file.originalname);
-        const filename = uniqueSuffix + ext;
-        const uploadDir = path.join(
-          process.cwd(),
-          "..",
-          "frontend",
-          "public",
-          "uploads",
-        );
-        const uploadPath = path.join(uploadDir, filename);
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
+        const filename = `${uniqueSuffix}${ext}`;
+
+        const { data, error: uploadError } = await supabase.storage
+          .from("images") 
+          .upload(filename, req.file.buffer, {
+            contentType: req.file.mimetype,
+          });
+
+        if (uploadError) {
+          console.error("Supabase upload error:", uploadError);
+          return res.status(500).json({ error: "Failed to upload image" });
         }
 
-        fs.writeFileSync(uploadPath, req.file.buffer);
-        photoUrl = `/uploads/${filename}`;
+        const { data: publicUrlData } = supabase.storage
+          .from("images")
+          .getPublicUrl(filename);
+
+        photoUrl = publicUrlData.publicUrl;
       }
       const requestData = {
         userId,
@@ -118,7 +122,7 @@ export const handlePickupRequest = [
       const existingAddress = await prisma.address.findFirst({
         where: {
           userId: pickupAddressData.userId,
-          address: pickupAddressData.address, 
+          address: pickupAddressData.address,
           latitude: pickupAddressData.latitude,
           longitude: pickupAddressData.longitude,
         },
@@ -130,7 +134,6 @@ export const handlePickupRequest = [
           req,
         );
       }
-
 
       const wasteType = value.wasteType;
       const requestId = createdRequest.requestId;
