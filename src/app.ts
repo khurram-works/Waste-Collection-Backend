@@ -16,7 +16,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser())
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.get('/notifications/long-poll',authenticateToken, getnotifications);
 app.patch("/notifications/:id/read",authenticateToken, updateNotifications);
 app.get("/unread/notifications", authenticateToken, getUnreadNotifications);
