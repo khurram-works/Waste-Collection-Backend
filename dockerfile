@@ -10,5 +10,5 @@ COPY prisma.config.ts /app/
 RUN npx prisma generate
 COPY . /app/
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && npm run start:prod"]
 

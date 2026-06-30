@@ -4,7 +4,6 @@ import express from 'express';
 import cors from 'cors';
 import authRouter from './Routes/authRouter';
 import cookieParser from 'cookie-parser';
-import path from 'path';
 import citizenRouter from './Routes/citizenRouter';
 import adminRouter from './Routes/adminRouter';
 import workerRouter from './Routes/workerRouter';
@@ -18,8 +17,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser())
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
-// app.options('*', cors()); 
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.get('/notifications/long-poll',authenticateToken, getnotifications);
 app.patch("/notifications/:id/read",authenticateToken, updateNotifications);
 app.get("/unread/notifications", authenticateToken, getUnreadNotifications);
