@@ -1,40 +1,64 @@
 import nodemailer from "nodemailer";
 
-
 const transporter = nodemailer.createTransport({
-  service: "gmail",           
+  service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,   
-    pass: process.env.EMAIL_PASS,   
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
-function getEmailSubject(type: string): string {
+type NotificationType =
+  | "PICKUP_SUBMITTED"
+  | "PICKUP_ASSIGNED"
+  | "PICKUP_SCHEDULED"
+  | "PICKUP_COLLECTED"
+  | "PICKUP_VERIFIED"
+  | "PICKUP_CANCELLED"
+  | "PAYMENT_CREDITED"
+  | "WITHDRAWAL_REQUESTED"
+  | "WITHDRAWAL_APPROVED"
+  | "WITHDRAWAL_PAID"
+  | "WITHDRAWAL_REJECTED";
+
+function getEmailSubject(type: NotificationType): string {
   const subjects: Record<string, string> = {
-    PICKUP_SUBMITTED:      "✅ Pickup Request Submitted — SmartWaste",
-    PICKUP_ASSIGNED:       "🚛 A Worker Has Been Assigned to Your Request",
-    PICKUP_SCHEDULED:      "📅 Your Pickup Has Been Scheduled",
-    PICKUP_COLLECTED:      "📦 Your Waste Has Been Collected",
-    PICKUP_VERIFIED:       "✔️ Your Pickup Has Been Verified",
-    PICKUP_CANCELLED:      "❌ Your Pickup Request Was Cancelled",
-    PAYMENT_CREDITED:      "💰 Your Wallet Has Been Credited — SmartWaste",
-    WITHDRAWAL_REQUESTED:  "📤 Withdrawal Request Received",
-    WITHDRAWAL_APPROVED:   "✅ Your Withdrawal Has Been Approved",
-    WITHDRAWAL_PAID:       "💸 Your Withdrawal Has Been Paid",
-    WITHDRAWAL_REJECTED:   "❌ Your Withdrawal Request Was Declined",
+    PICKUP_SUBMITTED: "✅ Pickup Request Submitted — SmartWaste",
+    PICKUP_ASSIGNED: "🚛 A Worker Has Been Assigned to Your Request",
+    PICKUP_SCHEDULED: "📅 Your Pickup Has Been Scheduled",
+    PICKUP_COLLECTED: "📦 Your Waste Has Been Collected",
+    PICKUP_VERIFIED: "✔️ Your Pickup Has Been Verified",
+    PICKUP_CANCELLED: "❌ Your Pickup Request Was Cancelled",
+    PAYMENT_CREDITED: "💰 Your Wallet Has Been Credited — SmartWaste",
+    WITHDRAWAL_REQUESTED: "📤 Withdrawal Request Received",
+    WITHDRAWAL_APPROVED: "✅ Your Withdrawal Has Been Approved",
+    WITHDRAWAL_PAID: "💸 Your Withdrawal Has Been Paid",
+    WITHDRAWAL_REJECTED: "❌ Your Withdrawal Request Was Declined",
   };
 
   return subjects[type] || "📬 New Notification — SmartWaste";
 }
 
-
-function buildEmailHTML(title: string, message: string, type: string): string {
-  const isPositive = ["PICKUP_ASSIGNED", "PICKUP_COLLECTED", "PICKUP_VERIFIED", 
-                       "PAYMENT_CREDITED", "WITHDRAWAL_APPROVED", "WITHDRAWAL_PAID"]
-                       .includes(type);
+function buildEmailHTML(
+  title: string,
+  message: string,
+  type: NotificationType,
+): string {
+  const isPositive = [
+    "PICKUP_ASSIGNED",
+    "PICKUP_COLLECTED",
+    "PICKUP_VERIFIED",
+    "PAYMENT_CREDITED",
+    "WITHDRAWAL_APPROVED",
+    "WITHDRAWAL_PAID",
+  ].includes(type);
   const isNegative = ["PICKUP_CANCELLED", "WITHDRAWAL_REJECTED"].includes(type);
-  
-  const bannerColor = isNegative ? "#ef4444" : isPositive ? "#10b981" : "#0d9488";
+
+  const bannerColor = isNegative
+    ? "#ef4444"
+    : isPositive
+      ? "#10b981"
+      : "#0d9488";
 
   return `
     <!DOCTYPE html>
@@ -68,7 +92,7 @@ function buildEmailHTML(title: string, message: string, type: string): string {
                       ${message}
                     </p>
 
-                    <a href="http://localhost:5173/" 
+                    <a href="${process.env.FRONTEND_URL}" 
                        style="display:inline-block; background:${bannerColor}; color:#ffffff; 
                               text-decoration:none; padding: 12px 24px; border-radius:8px; 
                               font-size:14px; font-weight:bold;">
@@ -81,7 +105,9 @@ function buildEmailHTML(title: string, message: string, type: string): string {
                 <tr>
                   <td style="padding: 16px 32px; background:#f9fafb; border-top: 1px solid #e5e7eb;">
                     <p style="margin:0; color:#9ca3af; font-size:12px;">
-                      This email was sent by SmartWaste. Please do not reply to this email.
+                      SmartWaste Platform
+© 2026 SmartWaste
+This is an automated email. Please do not reply.
                     </p>
                   </td>
                 </tr>
@@ -95,7 +121,6 @@ function buildEmailHTML(title: string, message: string, type: string): string {
   `;
 }
 
-
 export async function sendNotificationEmail({
   toEmail,
   type,
@@ -103,19 +128,26 @@ export async function sendNotificationEmail({
   message,
 }: {
   toEmail: string;
-  type: string;
+  type: NotificationType;
   title: string;
   message: string;
 }): Promise<void> {
   try {
-    await transporter.sendMail({
-      from: `"SmartWaste Platform" <${process.env.EMAIL_USER}>`,  
-      to: toEmail,          
-      subject: getEmailSubject(type),   
-      html: buildEmailHTML(title, message, type),  
+    const info = await transporter.sendMail({
+      from: `"SmartWaste Platform" <${process.env.EMAIL_USER}>`,
+      to: toEmail,
+      subject: getEmailSubject(type),
+      html: buildEmailHTML(title, message, type),
     });
 
-    console.log(`[Email] Sent "${type}" notification to ${toEmail}`);
+    await transporter.verify((err) => {
+      if (err) console.error(err);
+      else console.log("SMTP Ready");
+    });
+
+    console.log(
+      `[Email] Sent "${type}" to ${toEmail}. Message ID: ${info.messageId}`,
+    );
   } catch (error) {
     console.error(`[Email] Failed to send to ${toEmail}:`, error);
   }

@@ -1,12 +1,9 @@
-import { worker } from "node:cluster";
 import {
   RequestStatus,
-  RouteType,
   WasteType,
 } from "../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
 import { auditLogger } from "../utils/auditLogger";
-// import { pollingManager } from "../utils/pollingManager";
 import { createNotification } from "../service/notificationService";
 
 
@@ -44,13 +41,12 @@ interface pickupAddress {
   userId: number;
 }
 
-// Define this ONCE at the top of your file or in a constants file.
-// This is called a "lookup table" or "mapping object" — it's clean and easy to update.
+
 const WASTE_TYPE_TO_ROUTE: Record<string, "recycling" | "landfill"> = {
   PET: "recycling",
   PAPER: "recycling",
   CARDBOARD: "recycling",
-  METAL: "recycling", // metals are recyclable
+  METAL: "recycling", 
   NON_RECYCLABLE: "landfill",
 };
 

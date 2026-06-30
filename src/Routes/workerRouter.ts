@@ -7,8 +7,6 @@ import { setWorkerInactive } from "../Controllers/setWorkerInactive";
 import { updateCitizenProfile } from "../Controllers/updateCitizenProfile";
 import { updatePassword } from "../Controllers/updatePassword";
 import { deleteCitizenAccount } from "../Controllers/deleteCitizenAccount";
-// import { getnotifications } from "../Controllers/allNotifications";
-// import { updateNotifications } from "../Controllers/updateNotification";
 
 const workerRouter = Router();
 workerRouter.use(authenticateToken);
