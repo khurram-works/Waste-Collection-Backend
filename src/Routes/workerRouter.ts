@@ -7,9 +7,10 @@ import { setWorkerInactive } from "../Controllers/setWorkerInactive";
 import { updateCitizenProfile } from "../Controllers/updateCitizenProfile";
 import { updatePassword } from "../Controllers/updatePassword";
 import { deleteCitizenAccount } from "../Controllers/deleteCitizenAccount";
+import { requireRole } from "../Middlewares/roles";
 
 const workerRouter = Router();
-workerRouter.use(authenticateToken);
+workerRouter.use(authenticateToken, requireRole("WORKER"));
 workerRouter.get("/", getTasks);
 workerRouter.patch("/status/:requestId", updateStatus);
 workerRouter.get("/taskhistory", taskhistory);

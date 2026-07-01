@@ -78,7 +78,7 @@ export async function rejectWithdrawalRequest(
       action:"REJECT",
       req,
       status: "FAILED"
-    }).catch(()=>{})
+    }).catch(err => console.error("Audit logging failed:", err));
     console.error(error);
     return res.status(500).json({ message: "Something went wrong" });
   }

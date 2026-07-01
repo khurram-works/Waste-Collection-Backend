@@ -1,6 +1,11 @@
 import e from "express";
 import { prisma } from "../../lib/prisma";
-import { LedgerType, RequestStatus, TransactionSourceType, TransactionStatus } from "../../generated/prisma/enums";
+import {
+  LedgerType,
+  RequestStatus,
+  TransactionSourceType,
+  TransactionStatus,
+} from "../../generated/prisma/enums";
 import { AuditAction, AuditTargetType } from "../../generated/prisma/enums";
 import { auditLogger } from "../utils/auditLogger";
 import { createNotification } from "../service/notificationService";
@@ -9,10 +14,15 @@ export async function updateTask(req: e.Request, res: e.Response) {
   const requestId = Number(req.params.requestId);
   const { values } = req.body;
 
-  const actorId = req.user?.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
   if (isNaN(requestId)) {
-    return res.status(400).json({ success: false, message: "Invalid requestId" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid requestId" });
   }
 
   try {
@@ -42,20 +52,20 @@ export async function updateTask(req: e.Request, res: e.Response) {
     });
 
     await createNotification({
-        userId: Number(updatedTask.citizenId),
-        type: "PICKUP_VERIFIED",
-        title: "Pickup Verified",
-        message: `Your pickup request #${requestId} has been successfully verified.` ,
-        metadata: {
-          requestId: requestId,
-          verifiedAt: new Date().toISOString(),
-        }
-    })
+      userId: Number(updatedTask.citizenId),
+      type: "PICKUP_VERIFIED",
+      title: "Pickup Verified",
+      message: `Your pickup request #${requestId} has been successfully verified.`,
+      metadata: {
+        requestId: requestId,
+        verifiedAt: new Date().toISOString(),
+      },
+    });
 
     await auditLogger({
-      userId: actorId,
+      userId: userId,
       userRole: "WORKER",
-      action: AuditAction.STATUS_CHANGE,           
+      action: AuditAction.STATUS_CHANGE,
       targetType: AuditTargetType.PICKUP_REQUEST,
       targetId: String(requestId),
       oldValue: {
@@ -86,23 +96,23 @@ export async function updateTask(req: e.Request, res: e.Response) {
     });
 
     await createNotification({
-        userId: Number(transaction.citizenId),
-        type: "PAYMENT_CREDITED",
-        title: "Payment Received",
-        message: `You've earned a credit for your pickup request #${transaction.requestId}.`,
-        metadata: {
-          amount: Number(transaction.amount),
-          transactionId: transaction.transactionId,
-          processedAt: new Date().toISOString(),
-        },
+      userId: Number(transaction.citizenId),
+      type: "PAYMENT_CREDITED",
+      title: "Payment Received",
+      message: `You've earned a credit for your pickup request #${transaction.requestId}.`,
+      metadata: {
+        amount: Number(transaction.amount),
+        transactionId: transaction.transactionId,
+        processedAt: new Date().toISOString(),
+      },
     });
 
     await auditLogger({
-      userId: actorId,
+      userId: userId,
       userRole: "WORKER",
       action: "PAYMENT",
       targetType: AuditTargetType.TRANSACTION,
-      targetId: String(transaction.transactionId), 
+      targetId: String(transaction.transactionId),
       newValue: {
         citizenId: values.citizenId,
         requestId: values.requestId,
@@ -123,7 +133,7 @@ export async function updateTask(req: e.Request, res: e.Response) {
     });
 
     await auditLogger({
-      userId: actorId,
+      userId: userId,
       userRole: "WORKER",
       action: AuditAction.UPDATE,
       targetType: AuditTargetType.USER,
@@ -147,7 +157,7 @@ export async function updateTask(req: e.Request, res: e.Response) {
     });
 
     await auditLogger({
-      userId: actorId,
+      userId: userId,
       userRole: "WORKER",
       action: AuditAction.UPDATE,
       targetType: AuditTargetType.USER,
@@ -161,11 +171,14 @@ export async function updateTask(req: e.Request, res: e.Response) {
       req,
     });
 
-    return res.status(200).json({ success: true, message: "Task updated successfully", data: updatedTask });
-
-  } catch (error: any) {
+    return res.status(200).json({
+      success: true,
+      message: "Task updated successfully",
+      data: updatedTask,
+    });
+  } catch (error: unknown) {
     await auditLogger({
-      userId: actorId,
+      userId: userId,
       userRole: "WORKER",
       action: AuditAction.UPDATE,
       targetType: AuditTargetType.PICKUP_REQUEST,
@@ -173,9 +186,11 @@ export async function updateTask(req: e.Request, res: e.Response) {
       newValue: { attemptedValues: values },
       status: "FAILED",
       req,
-    }).catch(() => {});
+    }).catch(err => console.error("Audit logging failed:", err));
 
     console.error(error);
-    return res.status(500).json({ success: false, message: error.message });
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
+    return res.status(500).json({ success: false, message });
   }
 }

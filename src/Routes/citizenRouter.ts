@@ -10,10 +10,11 @@ import { updateCitizenProfile } from "../Controllers/updateCitizenProfile";
 import { updatePassword } from "../Controllers/updatePassword";
 import { setCitizenInactive } from "../Controllers/setCitizenInactive";
 import { deleteCitizenAccount } from "../Controllers/deleteCitizenAccount";
+import { requireRole } from "../Middlewares/roles";
 
 
 const citizenRouter = Router();
-citizenRouter.use(authenticateToken);
+citizenRouter.use(authenticateToken, requireRole("CITIZEN"));
 citizenRouter.get("/", citizenDashboardData);
 citizenRouter.post("/request", handlePickupRequest);
 citizenRouter.post("/withdraw", withdrawalRequest);

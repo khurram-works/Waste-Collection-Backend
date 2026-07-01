@@ -9,7 +9,11 @@ export async function assignWorker(
   res: e.Response,
 ) {
   const requestId = Number(req.params.requestId);
-  const { workerId, routeId, status } = req.body;
+  const workerId = req.user?.id;
+  if (!workerId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const { routeId, status } = req.body;
 
   if (isNaN(requestId)) {
     return res
@@ -47,17 +51,17 @@ export async function assignWorker(
       });
 
       await prisma.notification.create({
-        data:{
+        data: {
           userId: Number(rejected.citizenId),
           type: "PICKUP_CANCELLED",
           title: "Pickup Rejected",
-          message: `Your pickup request #${requestId} has been rejected.` ,
+          message: `Your pickup request #${requestId} has been rejected.`,
           metadata: {
             requestId: requestId,
             verifiedAt: new Date().toISOString(),
-          }
-        }
-      })
+          },
+        },
+      });
 
       await auditLogger({
         action: "REJECT",
@@ -99,15 +103,15 @@ export async function assignWorker(
     });
 
     await createNotification({
-        userId: Number(updated.workerId),
-        type: "PICKUP_ASSIGNED",
-        title: "New Task Assigned.",
-        message: "You have a pickup request.",
-        metadata: {
-          requestId: requestId,
-          assignedAt: new Date().toISOString(),
-        }
-    })
+      userId: Number(updated.workerId),
+      type: "PICKUP_ASSIGNED",
+      title: "New Task Assigned.",
+      message: "You have a pickup request.",
+      metadata: {
+        requestId: requestId,
+        assignedAt: new Date().toISOString(),
+      },
+    });
 
     await auditLogger({
       action: "ASSIGN",
@@ -124,7 +128,7 @@ export async function assignWorker(
       newValue: {
         status: updated.status,
         workerId: updated.workerId,
-        assignedDate: updated.assignedDate
+        assignedDate: updated.assignedDate,
       },
     });
 

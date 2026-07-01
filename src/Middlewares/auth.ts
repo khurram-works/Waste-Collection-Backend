@@ -9,7 +9,8 @@ function isJWTPayload(obj: unknown): obj is JWTPayload {
     typeof o.id === "number" &&
     typeof o.username === "string" &&
     typeof o.email === "string" &&
-    (typeof o.zoneId === "number" || o.zoneId === null)
+    (typeof o.zoneId === "number" || o.zoneId === null) &&
+    typeof o.role === "string"
   );
 }
 

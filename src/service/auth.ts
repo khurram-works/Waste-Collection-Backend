@@ -3,7 +3,11 @@ import { User } from "../../generated/prisma/client";
 import { JWTPayload } from "../types/auth";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
-const REFRESH_SECRET = process.env.Refresh_Secret!;
+const REFRESH_SECRET = process.env.REFRESH_SECRET!;
+
+if (!JWT_SECRET || !REFRESH_SECRET) {
+  throw new Error("Missing JWT_SECRET or REFRESH_SECRET");
+}
 
 export const ACCESS_TOKEN_EXPIRES_IN = (
   process.env.ACCESS_TOKEN_EXPIRES_IN ?? "30s"
@@ -18,6 +22,7 @@ function buildPayload(user: User): JWTPayload {
     username: user.name,
     email: user.email,
     zoneId: user.zoneId ?? null,
+    role: user.role,
   };
 }
 
@@ -42,7 +47,8 @@ export function setupJWT(user: User) {
 
 export function verifyJWT(token: string): JWTPayload | null {
   try {
-    return jsonwebtoken.verify(token, JWT_SECRET) as JWTPayload;
+    const payload = jsonwebtoken.verify(token, JWT_SECRET);
+    return payload as unknown as JWTPayload;
   } catch (err) {
     console.log("JWT verification failed:", err);
     return null;
@@ -51,7 +57,8 @@ export function verifyJWT(token: string): JWTPayload | null {
 
 export function verifyRefreshToken(refreshToken: string): JWTPayload | null {
   try {
-    return jsonwebtoken.verify(refreshToken, REFRESH_SECRET) as JWTPayload;
+    const payload = jsonwebtoken.verify(refreshToken, REFRESH_SECRET);
+    return payload as unknown as JWTPayload;
   } catch (err) {
     console.log("Refresh token verification failed:", err);
     return null;

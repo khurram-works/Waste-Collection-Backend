@@ -12,12 +12,12 @@ import {auditLogs} from "../Controllers/auditLogs";
 import { reports } from "../Controllers/reports";
 import { dashboardData } from "../Controllers/adminDashboardData";
 import { generatePdf } from "../Controllers/generatePdf";
-
+import { requireRole } from "../Middlewares/roles";
 
 
 
 const adminRouter = Router();
-adminRouter.use(authenticateToken);
+adminRouter.use(authenticateToken, requireRole("ADMIN"));
 adminRouter.post("/worker", addWorker);
 adminRouter.get('/manage', manageRequests);
 adminRouter.patch('/manage/:requestId', assignWorker);

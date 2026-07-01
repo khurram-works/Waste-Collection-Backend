@@ -3,4 +3,5 @@ export interface JWTPayload {
   username: string;
   email: string;
   zoneId: number | null;
+  role: string;
 }

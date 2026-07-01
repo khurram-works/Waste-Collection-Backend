@@ -17,7 +17,9 @@ export async function updateCitizenProfile(req: e.Request, res: e.Response) {
 
   try {
     if (error) {
-      return res.status(400).json({ success: false, error: error.details[0].message });
+      return res
+        .status(400)
+        .json({ success: false, error: error.details[0].message });
     }
 
     const { name, phone, email, address } = value;
@@ -26,6 +28,17 @@ export async function updateCitizenProfile(req: e.Request, res: e.Response) {
     const user = await prisma.user.findUnique({ where: { userId } });
     if (!user) {
       return res.status(404).json({ error: "User not found", success: false });
+    }
+
+    const existing = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existing && existing.userId !== req.user?.id) {
+      return res.status(400).json({
+        error: "Email is already in use by another account",
+        success: false,
+      });
     }
 
     const savedAddresses = await prisma.address.findMany({
@@ -41,7 +54,8 @@ export async function updateCitizenProfile(req: e.Request, res: e.Response) {
 
       if (!data || data.length === 0) {
         return res.status(400).json({
-          error: "Your written address is invalid, please write the appropriate address",
+          error:
+            "Your written address is invalid, please write the appropriate address",
           success: false,
         });
       }
@@ -53,12 +67,12 @@ export async function updateCitizenProfile(req: e.Request, res: e.Response) {
         data: { userId, address, latitude, longitude },
       });
     }
-    
-    const oldUser = await prisma.user.findUnique({
-      where: {userId: req.user?.id},
-    })
 
-    const newUser=await prisma.user.update({
+    const oldUser = await prisma.user.findUnique({
+      where: { userId: req.user?.id },
+    });
+
+    const newUser = await prisma.user.update({
       where: { userId },
       data: { name, email, phone, address },
     });
@@ -68,25 +82,26 @@ export async function updateCitizenProfile(req: e.Request, res: e.Response) {
       targetType: "USER",
       userRole: "CITIZEN",
       targetId: String(req.user?.id),
-      action:"UPDATE",
+      action: "UPDATE",
       req,
       oldValue: oldUser,
       newValue: newUser,
-    })
+    });
 
     return res.json({ message: "Profile updated successfully", success: true });
-
   } catch (err) {
     await auditLogger({
       userId: req.user?.id,
       targetType: "USER",
       userRole: "CITIZEN",
       targetId: String(req.user?.id),
-      action:"UPDATE",
+      action: "UPDATE",
       req,
-      status: "FAILED"
-    })
+      status: "FAILED",
+    });
     console.error(err);
-    res.status(500).json({ error: "Error updating citizen profile", success: false });
+    res
+      .status(500)
+      .json({ error: "Error updating citizen profile", success: false });
   }
 }
